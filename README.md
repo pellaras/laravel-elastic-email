@@ -26,7 +26,7 @@ Next, in config/app.php, comment out Laravel's default MailServiceProvider and a
      */
     ...
 //    Illuminate\Mail\MailServiceProvider::class,
-    Chocoholics\LaravelElasticEmail\MailServiceProvider::class,
+    ArtisanMY\LaravelElasticEmail\MailServiceProvider::class,
     ...
 ],
 ```
