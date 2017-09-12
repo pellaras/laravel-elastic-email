@@ -1,6 +1,6 @@
 <?php
 
-namespace Chocoholics\LaravelElasticEmail;
+namespace ArtisanMY\LaravelElasticEmail;
 
 use Illuminate\Mail\MailServiceProvider as LaravelMailServiceProvider;
 
