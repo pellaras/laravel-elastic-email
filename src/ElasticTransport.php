@@ -70,17 +70,44 @@ class ElasticTransport extends Transport
             'msgFromName' => $this->getFromAddress($message)['name'],
             'from' => $this->getFromAddress($message)['email'],
             'fromName' => $this->getFromAddress($message)['name'],
-            'to' => $this->getEmailAddresses($message),
             'subject' => $message->getSubject(),
             'body_html' => $message->getBody(),
-        'body_text' => $this->getText($message)
+            'body_text' => $this->getText($message),
         ];
 
+        if ($this->getReplyToAddress($message)) {
+            $data['replyTo'] = $this->getReplyToAddress($message)['email'];
+            $data['replyToName'] = $this->getReplyToAddress($message)['name'];
+        }
+
+        $data = $this->getParameters($message, $data);
+
         $result = $this->client->post($this->url, [
-            'form_params' => $data
+            'form_params' => $data,
         ]);
         
         return $result;
+    }
+
+    protected function getParameters(Swift_Mime_SimpleMessage $message, $data)
+    {
+        $available_parameters = [
+            'channel' => null,
+            'isTransactional' => 1,
+        ];
+
+        $headers = $message->getHeaders();
+
+        foreach ($available_parameters AS $parameter_key => $parameter_default_value) {
+            if ($headers->has($parameter_key)) {
+                $data[$parameter_key] = $headers->get($parameter_key)->getFieldBody();
+            }
+            elseif ($parameter_default_value !== null) {
+                $data[$parameter_key] = $parameter_default_value;
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -114,6 +141,18 @@ class ElasticTransport extends Transport
         return [
             'email' => array_keys($message->getFrom())[0],
             'name' => array_values($message->getFrom())[0],
+        ];
+    }
+    
+    protected function getReplyToAddress(Swift_Mime_SimpleMessage $message)
+    {
+        if (! $message->getReplyTo()) {
+            return false;
+        }
+
+        return [
+            'email' => array_keys($message->getReplyTo())[0],
+            'name' => array_values($message->getReplyTo())[0],
         ];
     }
     
