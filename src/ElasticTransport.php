@@ -5,6 +5,8 @@ namespace ArtisanMY\LaravelElasticEmail;
 use GuzzleHttp\ClientInterface;
 use Illuminate\Mail\Transport\Transport;
 use Swift_Mime_SimpleMessage;
+use Swift_Attachment;
+use Swift_Image;
 
 class ElasticTransport extends Transport
 {
@@ -36,6 +38,8 @@ class ElasticTransport extends Transport
      * @var string
      */
     protected $url = 'https://api.elasticemail.com/v2/email/send';
+
+    const MAXIMUM_FILE_SIZE = 10485760;
 
     /**
      * Create a new Elastic Email transport instance.
@@ -82,8 +86,33 @@ class ElasticTransport extends Transport
 
         $data = $this->getParameters($message, $data);
 
+        $attachments = $this->getAttachments($message);
+
+        if (count($attachments)) {
+            $_data = [];
+
+            foreach ($data AS $key => $value) {
+                $_data[] = [
+                    'name' => $key,
+                    'contents' => $value,
+                ];
+            }
+
+            foreach ($attachments AS $key => $file) {
+                $_data[] = [
+                    'name' => 'file_' . $key,
+                    'contents' => $file['contents'],
+                    'filename' => $file['filename'],
+                ];
+            }
+            
+            $data = $_data;
+        }
+
+        $form_type = count($attachments) ? 'multipart' : 'form_params';
+
         $result = $this->client->post($this->url, [
-            'form_params' => $data,
+            $form_type => $data,
         ]);
         
         return $result;
@@ -108,6 +137,25 @@ class ElasticTransport extends Transport
         }
 
         return $data;
+    }
+
+    private function getAttachments(Swift_Mime_SimpleMessage $message)
+    {
+        $attachments = [];
+
+        foreach ($message->getChildren() as $attachment) {
+            if ((!$attachment instanceof Swift_Attachment && !$attachment instanceof Swift_Image)
+                || !strlen($attachment->getBody()) > self::MAXIMUM_FILE_SIZE
+            ) {
+                continue;
+            }
+            $attachments[] = [
+                'contents' => $attachment->getBody(),
+                'filename' => $attachment->getFilename(),
+            ];
+        }
+
+        return $attachments;
     }
 
     /**
