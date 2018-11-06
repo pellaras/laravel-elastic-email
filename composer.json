@@ -22,5 +22,12 @@
 			"ArtisanMY\\LaravelElasticEmail\\": "src/"
 		}
 	},
-	"minimum-stability": "stable"
+	"minimum-stability": "stable",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ArtisanMY\\LaravelElasticEmail\\MailServiceProvider"
+            ]
+        }
+	}
 }
